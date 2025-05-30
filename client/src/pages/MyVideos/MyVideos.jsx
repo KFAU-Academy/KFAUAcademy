@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./MyVideos.css";
 import Navbar from "../../components/Navbar/Navbar";
 import Sidebar from "../../components/Sidebar/Sidebar";
@@ -7,16 +7,17 @@ import { GiPlayButton } from "react-icons/gi";
 import { Swiper, SwiperSlide, useSwiper } from "swiper/react";
 import "swiper/css";
 import { sliderSettings } from "../../utils/common";
+import axios from "axios";
 
-const MyVideos = () => {
+const MyVideos = function () {
   const [courseName, setCourseName] = useState("");
-  const [videoName, setVideoName] = useState(""); // Video name state
+  const [videoTitle, setVideoTitle] = useState("");
   const [videoFile, setVideoFile] = useState(null);
   const [uploadedVideos, setUploadedVideos] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [courseNameError, setCourseNameError] = useState(false);
-  const [videoNameError, setVideoNameError] = useState(false);
-  const [editingVideo, setEditingVideo] = useState(null);
+  const [videoTitleError, setVideoTitleError] = useState(false);
+  const [editingVideoId, setEditingVideoId] = useState(null);
 
   const courseOptions = [
     "Operating Systems",
@@ -25,231 +26,256 @@ const MyVideos = () => {
     "Modern Programming Languages",
   ];
 
-  const handleCourseNameChange = (e) => {
+  const getUserEmailFromToken = function () {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.email;
+    } catch (err) {
+      console.error("Token çözümleme hatası:", err);
+      return null;
+    }
+  };
+
+  const userEmail = getUserEmailFromToken();
+
+  useEffect(
+    function () {
+      const fetchVideos = async function () {
+        try {
+          const response = await axios.get("/api/video/allvideos", {
+            params: { userEmail: userEmail },
+          });
+          setUploadedVideos(response.data);
+        } catch (err) {
+          console.error("Videolar çekilirken hata:", err);
+          alert("Videolar yüklenirken bir hata oluştu.");
+        }
+      };
+      if (userEmail) {
+        fetchVideos();
+      }
+    },
+    [userEmail]
+  );
+
+  const handleCourseNameChange = function (e) {
     setCourseName(e.target.value);
     if (e.target.value.trim() !== "") {
       setCourseNameError(false);
     }
   };
 
-  const handleVideoNameChange = (e) => {
-    setVideoName(e.target.value);
+  const handleVideoTitleChange = function (e) {
+    setVideoTitle(e.target.value);
     if (e.target.value.trim() !== "") {
-      setVideoNameError(false);
+      setVideoTitleError(false);
     }
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = function (e) {
     setVideoFile(e.target.files[0]);
   };
 
-  const handleUpload = () => {
-    if (courseName.trim() === "" || videoName.trim() === "" || !videoFile) {
+  const handleUpload = async function () {
+    if (
+      courseName.trim() === "" ||
+      videoTitle.trim() === "" ||
+      (!videoFile && !editingVideoId)
+    ) {
       if (courseName.trim() === "") setCourseNameError(true);
-      if (videoName.trim() === "") setVideoNameError(true);
-      if (!videoFile) alert("Please select a video file.");
+      if (videoTitle.trim() === "") setVideoTitleError(true);
+      if (!videoFile && !editingVideoId)
+        alert("Lütfen bir video dosyası seçin.");
       return;
     }
 
-    const fileURL = URL.createObjectURL(videoFile);
-    const newVideo = {
-      id: uploadedVideos.length + 1,
-      courseName,
-      videoName,
-      fileName: videoFile.name,
-      fileURL,
-    };
+    const formData = new FormData();
+    formData.append("courseName", courseName);
+    formData.append("videoTitle", videoTitle);
+    formData.append("userEmail", userEmail);
+    if (videoFile) {
+      formData.append("file", videoFile);
+    }
 
-    setUploadedVideos([...uploadedVideos, newVideo]);
-    setCourseName("");
-    setVideoName("");
-    setVideoFile(null);
-    setShowModal(false);
+    try {
+      if (editingVideoId) {
+        const response = await axios.put(
+          "/api/video/" + editingVideoId,
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
+        setUploadedVideos(
+          uploadedVideos.map(function (video) {
+            return video.id === editingVideoId ? response.data.video : video;
+          })
+        );
+      } else {
+        const response = await axios.post("/api/video/create", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        setUploadedVideos([response.data.video].concat(uploadedVideos));
+      }
+
+      setCourseName("");
+      setVideoTitle("");
+      setVideoFile(null);
+      setShowModal(false);
+      setEditingVideoId(null);
+    } catch (err) {
+      console.error("Video işlem hatası:", err);
+      alert("Video işlenirken bir hata oluştu: " + err.message);
+    }
   };
 
-  const handleDelete = (id) => {
-    setUploadedVideos(uploadedVideos.filter((video) => video.id !== id));
-  };
-
-  const handleEdit = (id) => {
-    const videoToEdit = uploadedVideos.find((video) => video.id === id);
-    setEditingVideo({ ...videoToEdit }); // Clone the video to edit
+  const handleEdit = function (id) {
+    const videoToEdit = uploadedVideos.find(function (video) {
+      return video.id === id;
+    });
+    setCourseName(videoToEdit.courseName);
+    setVideoTitle(videoToEdit.videoTitle);
+    setEditingVideoId(id);
     setShowModal(true);
   };
 
-  const handleEditSave = () => {
-    setUploadedVideos(
-      uploadedVideos.map((video) =>
-        video.id === editingVideo.id ? { ...editingVideo } : video
-      )
-    );
-    setEditingVideo(null);
-    setShowModal(false);
+  const handleDelete = async function (id) {
+    try {
+      await axios.delete("/api/video/" + id);
+      setUploadedVideos(
+        uploadedVideos.filter(function (video) {
+          return video.id !== id;
+        })
+      );
+    } catch (err) {
+      console.error("Video silme hatası:", err);
+      alert("Video silinirken bir hata oluştu.");
+    }
   };
 
   return (
     <section className="mv-wrapper">
       <Navbar />
-
       <div className="ma-main">
         <Sidebar />
-
-        {/* Ana İçerik */}
         <main className="ma-container">
-          {/* Head Kısmı */}
           <div className="ma-head flexStart">
-            <span className="primaryText">My Videos</span>
+            <span className="primaryText">Videolarım</span>
             <button
               className="flexStart add-button"
-              onClick={() => setShowModal(true)}
+              onClick={function () {
+                setShowModal(true);
+              }}
             >
               <img
                 src={greenAdd}
-                alt="Add Videos"
-                title="Add Videos"
+                alt="Video Ekle"
+                title="Video Ekle"
                 className="add-icon"
               />
-              <span>Add Videos</span>
+              <span>Video Ekle</span>
             </button>
           </div>
 
-          {/* Kart Kısmı */}
           <Swiper {...sliderSettings}>
             <SliderButtons />
-            {uploadedVideos.map((video) => (
-              <SwiperSlide key={video.id}>
-                <div className="flexColStart mv-card">
-                  <img
-                    src="/video_icon.png"
-                    alt="Video Simgesi"
-                    className="mv-card-icon"
-                  />
-                  <h3>{video.courseName}</h3>
-                  <p>{video.videoName}</p>
-                  <div className="flexCenter mv-card-buttons">
-                    <button
-                      className="button2"
-                      onClick={() => handleEdit(video.id)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="button2"
-                      onClick={() => handleDelete(video.id)}
-                    >
-                      Delete
-                    </button>
-                    <button
-                      className="flexCenter button2"
-                      onClick={() => window.open(video.fileURL, "_blank")}
-                    >
-                      <GiPlayButton size={30} />
-                    </button>
+            {uploadedVideos.map(function (video) {
+              return (
+                <SwiperSlide key={video.id}>
+                  <div className="flexColStart mv-card">
+                    <img
+                      src={video.image || "/video_icon.png"}
+                      alt="Video Simgesi"
+                      className="mv-card-icon"
+                    />
+                    <h3>{video.courseName}</h3>
+                    <p>{video.videoTitle}</p>
+                    <div className="flexCenter mv-card-buttons">
+                      <button
+                        className="button2"
+                        onClick={function () {
+                          handleEdit(video.id);
+                        }}
+                      >
+                        Düzenle
+                      </button>
+                      <button
+                        className="button2"
+                        onClick={function () {
+                          handleDelete(video.id);
+                        }}
+                      >
+                        Sil
+                      </button>
+                      <button
+                        className="flexCenter button2"
+                        onClick={function () {
+                          window.open(video.videoUrl, "_blank");
+                        }}
+                      >
+                        <GiPlayButton size={30} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </SwiperSlide>
-            ))}
+                </SwiperSlide>
+              );
+            })}
           </Swiper>
         </main>
       </div>
 
-      {/* Modal Section */}
       {showModal && (
         <div className="mv-modal-overlay">
           <div className="mv-modal-content">
-            <h3>{editingVideo ? "Edit Video" : "Add New Video"}</h3>
-            {/* Course Name Input */}
+            <h3>{editingVideoId ? "Videoyu Düzenle" : "Yeni Video Ekle"}</h3>
             <select
-              value={editingVideo ? editingVideo.courseName : courseName}
-              onChange={(e) =>
-                editingVideo
-                  ? setEditingVideo({
-                      ...editingVideo,
-                      courseName: e.target.value,
-                    })
-                  : handleCourseNameChange(e)
-              }
+              value={courseName}
+              onChange={handleCourseNameChange}
               className="mv-input-field"
             >
-              <option value="">Select a Course</option>
-              {courseOptions.map((course, index) => (
-                <option key={index} value={course}>
-                  {course}
-                </option>
-              ))}
+              <option value="">Ders Seçin</option>
+              {courseOptions.map(function (course, index) {
+                return (
+                  <option key={index} value={course}>
+                    {course}
+                  </option>
+                );
+              })}
             </select>
-            {courseNameError && !editingVideo && (
-              <p className="mv-error-message">Course name is required.</p>
+            {courseNameError && (
+              <p className="mv-error-message">Ders adı gerekli.</p>
             )}
-
-            {/* Video Name Input */}
             <input
               type="text"
-              placeholder="Enter Video Name"
-              value={editingVideo ? editingVideo.videoName : videoName}
-              onChange={(e) =>
-                editingVideo
-                  ? setEditingVideo({
-                      ...editingVideo,
-                      videoName: e.target.value,
-                    })
-                  : handleVideoNameChange(e)
-              }
+              placeholder="Video Başlığını Girin"
+              value={videoTitle}
+              onChange={handleVideoTitleChange}
               className="mv-input-field"
             />
-            {videoNameError && !editingVideo && (
-              <p className="mv-error-message">Video name is required.</p>
+            {videoTitleError && (
+              <p className="mv-error-message">Video başlığı gerekli.</p>
             )}
-
-            {/* File Input */}
             <input
               type="file"
               accept="video/*"
-              onChange={(e) => {
-                if (editingVideo) {
-                  const file = e.target.files[0];
-                  const fileURL = URL.createObjectURL(file);
-                  setEditingVideo({
-                    ...editingVideo,
-                    fileName: file.name,
-                    fileURL,
-                  });
-                } else {
-                  handleFileChange(e);
-                }
-              }}
+              onChange={handleFileChange}
               className="mv-input-field"
             />
-
             <div className="mv-modal-buttons">
-              {editingVideo ? (
-                <>
-                  <button onClick={handleEditSave} className="mv-upload-button">
-                    Save
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingVideo(null);
-                      setShowModal(false);
-                    }}
-                    className="mv-videos-cancel-button"
-                  >
-                    Cancel
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button onClick={handleUpload} className="mv-upload-button">
-                    Upload
-                  </button>
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="mv-videos-cancel-button"
-                  >
-                    Cancel
-                  </button>
-                </>
-              )}
+              <button onClick={handleUpload} className="mv-upload-button">
+                {editingVideoId ? "Kaydet" : "Yükle"}
+              </button>
+              <button
+                onClick={function () {
+                  setShowModal(false);
+                  setEditingVideoId(null);
+                }}
+                className="mv-videos-cancel-button"
+              >
+                İptal
+              </button>
             </div>
           </div>
         </div>
@@ -258,14 +284,26 @@ const MyVideos = () => {
   );
 };
 
-export default MyVideos;
-
-const SliderButtons = () => {
+const SliderButtons = function () {
   const swiper = useSwiper();
   return (
     <div className="flexCenter ma-buttons">
-      <button onClick={() => swiper.slidePrev()}>&lt;</button>
-      <button onClick={() => swiper.slideNext()}>&gt;</button>
+      <button
+        onClick={function () {
+          swiper.slidePrev();
+        }}
+      >
+        &lt;
+      </button>
+      <button
+        onClick={function () {
+          swiper.slideNext();
+        }}
+      >
+        &gt;
+      </button>
     </div>
   );
 };
+
+export default MyVideos;
