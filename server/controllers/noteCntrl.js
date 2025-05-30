@@ -2,7 +2,8 @@ import asyncHandler from 'express-async-handler'
 import { prisma } from '../config/prismaConfig.js'
 
 export const createNote = asyncHandler(async (req, res)=>{
-    const {courseName, noteTitle, noteUrl, image, userEmail} = req.body.data;
+    const {courseName, noteTitle, image, userEmail} = req.body.data;
+    const noteUrl = req.file.path; //yüklenen dosyanın yolu #ileride html url olarak güncellenebilir.
 
     console.log(req.body.data);
     try {

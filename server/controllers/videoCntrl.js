@@ -2,7 +2,8 @@ import asyncHandler from 'express-async-handler'
 import { prisma } from '../config/prismaConfig.js'
 
 export const createVideo = asyncHandler(async (req, res)=>{
-    const {courseName, videoTitle, videoUrl, image,userEmail} = req.body.data;
+    const {courseName, videoTitle, image,userEmail} = req.body.data;
+    const videoUrl = req.file.path;
 
     console.log(req.body.data);
     try {
