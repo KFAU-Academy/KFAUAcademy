@@ -91,6 +91,23 @@ export const getAllNotes = asyncHandler(async (req, res)=>{
     res.send(notes)
 }); 
 
+//function get my notes
+export const getMyNotes = asyncHandler(async (req, res) => {
+  // req.user.email varsayıyoruz (auth middleware bunu set ediyor)
+  const userEmail = req.user.email;
+
+  if (!userEmail) {
+    return res.status(401).json({ message: "Kullanıcı doğrulanamadı" });
+  }
+
+  const notes = await prisma.note.findMany({
+    where: { owner: { email: userEmail } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  res.json(notes);
+});
+
 //function to get specific anoouncement
 export const getNote = asyncHandler(async (req, res)=>{
     const {id} = req.params;
