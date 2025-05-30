@@ -39,7 +39,7 @@ model Video {
 model Note {
     id         String   @id @default(auto()) @map("_id") @db.ObjectId
     courseName String
-    image      String
+    image      String   @default("note_icon.png") //sabit resim
     noteTitle  String
     noteUrl    String
     userEmail  String
@@ -53,7 +53,7 @@ model Note {
 model Announcement {
     id        String   @id @default(auto()) @map("_id") @db.ObjectId
     category  String
-    image     String
+    image     String?
     title     String
     content   String
     userEmail String
