@@ -5,7 +5,7 @@ export const createVideo = asyncHandler(async (req, res) => {
     const courseName = req.body.courseName;
     const videoTitle = req.body.videoTitle;
     const userEmail = req.body.userEmail;
-    const image = req.body.image || null;
+    const image = req.body.image || "video_icon.png";
 
     if (!req.file) {
         throw new Error('Lütfen bir video dosyası yükleyin');
@@ -24,7 +24,6 @@ export const createVideo = asyncHandler(async (req, res) => {
                 videoTitle: videoTitle,
                 videoUrl: videoUrl,
                 image: image,
-                userEmail: userEmail,
                 owner: { connect: { email: userEmail } },
             },
         });
@@ -42,7 +41,7 @@ export const updateVideo = asyncHandler(async (req, res) => {
     const courseName = req.body.courseName;
     const videoTitle = req.body.videoTitle;
     const userEmail = req.body.userEmail;
-    const image = req.body.image || null;
+    const image = req.body.image || "video_icon.png";
     let videoUrl = null;
 
     if (req.file) {
@@ -57,7 +56,6 @@ export const updateVideo = asyncHandler(async (req, res) => {
         const updateData = {
             courseName: courseName,
             videoTitle: videoTitle,
-            userEmail: userEmail,
             image: image,
         };
 
@@ -76,6 +74,37 @@ export const updateVideo = asyncHandler(async (req, res) => {
         }
         throw new Error(err.message);
     }
+});
+
+//function to delete videos
+export const deleteVideo = asyncHandler(async (req, res) => {
+  const id = req.params.id;
+  try {
+    await prisma.video.delete({
+      where: { id },
+    });
+    res.json({ message: 'Video başarıyla silindi' });
+  } catch (err) {
+    res.status(500);
+    throw new Error('Video silinirken hata oluştu: ' + err.message);
+  }
+});
+
+//function get my videos
+export const getMyVideos = asyncHandler(async (req, res) => {
+  // req.user.email varsayıyoruz (auth middleware bunu set ediyor)
+  const userEmail = req.user.email;
+
+  if (!userEmail) {
+    return res.status(401).json({ message: "Kullanıcı doğrulanamadı" });
+  }
+
+  const videos = await prisma.video.findMany({
+    where: { owner: { email: userEmail } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  res.json(videos);
 });
 
 //function to get all anoouncements
