@@ -53,7 +53,7 @@ model Note {
 model Announcement {
     id        String   @id @default(auto()) @map("_id") @db.ObjectId
     category  String
-    image     String
+    image     String?
     title     String
     content   String
     userEmail String

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import "./MyAnnouncements.css";
 import Navbar from "../../components/Navbar/Navbar";
 import Sidebar from "../../components/Sidebar/Sidebar";
@@ -23,29 +24,95 @@ const MyAnnouncements = () => {
 
   const [announcements, setAnnouncements] = useState([]);
 
+  // Kullanıcının email bilgisini localStorage'dan alıyoruz
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const currentUserEmail = user.email || "";
+
+  // Tüm duyuruları çekiyoruz
+  const fetchAllAnnouncements = async () => {
+    try {
+      const res = await axios.get("/api/announcement/allann");
+      setAnnouncements(res.data);
+    } catch (error) {
+      console.error("Error fetching announcements", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllAnnouncements();
+  }, []);
+
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = () => {
-    if (editingAnnouncement) {
-      const updatedAnnouncements = announcements.map((announcement) =>
-        announcement.id === editingAnnouncement.id
-          ? { ...announcement, ...formData }
-          : announcement
+  const handleSubmit = async () => {
+    try {
+      if (editingAnnouncement) {
+        // update işlemi
+        const res = await axios.put(
+          `/api/announcement/${editingAnnouncement.id}`,
+          {
+            category: formData.category,
+            title: formData.title,
+            content: formData.content,
+          }
+        );
+
+        // Güncellenen duyuruyu listede yenile
+        setAnnouncements(
+          announcements.map((a) =>
+            a.id === editingAnnouncement.id ? res.data.announcement : a
+          )
+        );
+
+        setModalOpen(false);
+        setEditingAnnouncement(null);
+        setFormData({
+          category: "",
+          title: "",
+          creator: "",
+          date: "",
+          content: "",
+        });
+        return;
+      }
+
+      // Yeni duyuru oluşturma işlemi (eski hali)
+      const newAnnouncement = {
+        category: formData.category,
+        title: formData.title,
+        content: formData.content,
+        userEmail: currentUserEmail,
+      };
+
+      const res = await axios.post("/api/announcement/create", newAnnouncement);
+
+      setAnnouncements([res.data.announcement, ...announcements]);
+      setModalOpen(false);
+      setFormData({
+        category: "",
+        title: "",
+        creator: "",
+        date: "",
+        content: "",
+      });
+    } catch (error) {
+      console.error("Error creating/updating announcement", error);
+      alert(
+        "Duyuru oluşturulurken/güncellenirken hata oluştu: " + error.message
       );
-      setAnnouncements(updatedAnnouncements);
-    } else {
-      const newAnnouncement = { ...formData, id: Date.now() };
-      setAnnouncements([newAnnouncement, ...announcements]);
     }
-    closeModal();
   };
 
-  const handleDelete = (id) => {
-    setAnnouncements(
-      announcements.filter((announcement) => announcement.id !== id)
-    );
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`/api/announcement/${id}`);
+      setAnnouncements(announcements.filter((a) => a.id !== id));
+    } catch (error) {
+      console.error("Error deleting announcement", error);
+      alert("Duyuru silinirken hata oluştu: " + error.message);
+    }
   };
 
   const handleContentClick = (announcement) => {
@@ -57,8 +124,8 @@ const MyAnnouncements = () => {
     setFormData({
       category: announcement.category,
       title: announcement.title,
-      creator: announcement.creator,
-      date: announcement.date,
+      creator: announcement.creator || "",
+      date: announcement.date ? announcement.date.split("T")[0] : "",
       content: announcement.content,
     });
     setEditingAnnouncement(announcement);
@@ -104,45 +171,56 @@ const MyAnnouncements = () => {
           {announcements.length > 0 && (
             <Swiper {...sliderSettings}>
               <SliderButtons />
-              {announcements.map((card, i) => (
-                <SwiperSlide key={i}>
-                  <div className="flexColStart ma-card">
-                    <img
-                      src="/uni_icon.png"
-                      alt="announcement"
-                      className="ma-card-icon"
-                    />
-                    <span className="purpleText">{card.title}</span>
-                    <span className="greenText">{card.creator}</span>
-                    <span className="secondaryText ma-category">
-                      {card.category}
-                    </span>
-                    <span className="secondaryText ma-date">
-                      <span>{card.date}</span>
-                    </span>
-                    <div className="flexCenter ma-card-buttons">
-                      <button
-                        className="button2"
-                        onClick={() => handleEditClick(card)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="button2"
-                        onClick={() => handleDelete(card.id)}
-                      >
-                        Delete
-                      </button>
-                      <button
-                        className="button2"
-                        onClick={() => handleContentClick(card)}
-                      >
-                        <MdOutlineAnnouncement size={30} />
-                      </button>
+              {announcements.map((card) => {
+                let iconSrc = "/course_icon.png"; // default icon
+                if (card.category === "club") {
+                  iconSrc = "/club_icon.png";
+                } else if (card.category === "note") {
+                  iconSrc = "/course_icon.png";
+                } else if (card.category === "video") {
+                  iconSrc = "/course_icon.png";
+                }
+
+                return (
+                  <SwiperSlide key={card.id}>
+                    <div className="flexColStart ma-card">
+                      <img
+                        src={iconSrc}
+                        alt="announcement"
+                        className="ma-card-icon"
+                      />
+                      <span className="purpleText">{card.title}</span>
+                      <span className="greenText">{card.creator}</span>
+                      <span className="secondaryText ma-category">
+                        {card.category}
+                      </span>
+                      <span className="secondaryText ma-date">
+                        <span>{new Date(card.date).toLocaleDateString()}</span>
+                      </span>
+                      <div className="flexCenter ma-card-buttons">
+                        <button
+                          className="button2"
+                          onClick={() => handleEditClick(card)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="button2"
+                          onClick={() => handleDelete(card.id)}
+                        >
+                          Delete
+                        </button>
+                        <button
+                          className="button2"
+                          onClick={() => handleContentClick(card)}
+                        >
+                          <MdOutlineAnnouncement size={30} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </SwiperSlide>
-              ))}
+                  </SwiperSlide>
+                );
+              })}
             </Swiper>
           )}
         </main>
@@ -229,7 +307,8 @@ const MyAnnouncements = () => {
                 <strong>Creator:</strong> {selectedContent.creator}
               </p>
               <p>
-                <strong>Date:</strong> {selectedContent.date}
+                <strong>Date:</strong>{" "}
+                {new Date(selectedContent.date).toLocaleDateString()}
               </p>
               <p>{selectedContent.content}</p>
             </div>
@@ -248,7 +327,6 @@ const SliderButtons = () => {
     <div className="flexCenter ma-buttons">
       <button onClick={() => swiper.slidePrev()}>&lt;</button>
       <button onClick={() => swiper.slideNext()}>&gt;</button>
-        
     </div>
   );
 };
