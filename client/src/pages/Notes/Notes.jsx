@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import "./Notes.css";
 import Navbar from "../../components/Navbar/Navbar";
-import { FaSearch, FaChevronDown } from "react-icons/fa";
+import { FaSearch, FaChevronDown, FaFilePdf } from "react-icons/fa";
 import useNotes from "../../hooks/useNotes";
 import { PuffLoader } from "react-spinners";
 import { AiFillHeart } from "react-icons/ai";
-import { GiPlayButton } from "react-icons/gi";
 import { truncate } from "lodash";
 
 const Notes = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const { data, isError, isLoading } = useNotes();
 
   if (isError) {
@@ -34,6 +34,7 @@ const Notes = () => {
       </div>
     );
   }
+
   console.log(data);
 
   const courseOptions = [
@@ -56,16 +57,32 @@ const Notes = () => {
     setSelectedCourse(e.target.value);
   };
 
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Helper function to format note URL
+  const getNoteUrl = (noteUrl) => {
+    const baseUrl = "http://localhost:8000";
+    return noteUrl.startsWith("http") ? noteUrl : `${baseUrl}${noteUrl}`;
+  };
+
+  // Filter notes based on selected course and search query
+  const filteredNotes = data && data.filter((card) =>
+    (selectedCourse ? card.courseName.toLowerCase().includes(selectedCourse.toLowerCase()) : true) &&
+    (searchQuery ? card.noteTitle.toLowerCase().includes(searchQuery.toLowerCase()) : true)
+  );
+
   return (
     <section className="n-wrapper">
       <Navbar />
       <div className="paddings flexCenter n-container">
-        {/* Seçim çubuğu */}
+        {/* Selection bar */}
         <div className="selection-bar">
           <input
             type="text"
             value={selectedCourse}
-            placeholder="Search for courses.."
+            placeholder="Search for courses..."
             onChange={handleInputChange}
             className="course-input"
           />
@@ -75,6 +92,12 @@ const Notes = () => {
 
           {dropdownOpen && (
             <ul className="dropdown-menu">
+              <li
+                className="dropdown-item"
+                onClick={() => selectCourse("")}
+              >
+                All Courses
+              </li>
               {courseOptions.map((course, index) => (
                 <li
                   key={index}
@@ -88,32 +111,46 @@ const Notes = () => {
           )}
         </div>
 
-        {/* Arama çubuğu */}
+        {/* Search bar */}
         <div className="search-bar">
           <FaSearch color="#d06382" size={20} />
-          <input type="text" placeholder="Search..." />
+          <input
+            type="text"
+            value={searchQuery}
+            placeholder="Search by note title..."
+            onChange={handleSearchChange}
+            className="search-input"
+          />
           <button className="button4">Search</button>
         </div>
 
-        {/* Notlar */}
+        {/* Notes */}
         <main className="ns-container">
           <div className="paddings flexCenter notes">
-            {data.map((card, i) => (
-              <div className="flexColStart n-card">
-                <AiFillHeart size={30} color="#fff2f9" />
-                <img src={card.image} alt="note" />
-                <span className="purpleText">
-                  {truncate(card.noteTitle, { length: 30 })}
-                </span>
-                <span className="greenText">{card.creator}</span>
-                <button
-                  className="flexCenter button2"
-                  onClick={() => window.open(card.noteURL, "_blank")}
-                >
-                  <GiPlayButton size={30} />
-                </button>
-              </div>
-            ))}
+            {filteredNotes && filteredNotes.length > 0 ? (
+              filteredNotes.map((card, i) => (
+                <div key={i} className="flexColStart n-card">
+                  <AiFillHeart size={30} color="#fff2f9" />
+                  <img
+                    src={card.image || "/note_icon.png"}
+                    alt="note"
+                    onError={(e) => (e.target.src = "/note_icon.png")} // Fallback image if loading fails
+                  />
+                  <span className="purpleText">
+                    {truncate(card.noteTitle, { length: 30 })}
+                  </span>
+                  <span className="greenText">{card.userEmail.split("@")[0]}</span>
+                  <button
+                    className="flexCenter button2"
+                    onClick={() => window.open(getNoteUrl(card.noteUrl), "_blank")}
+                  >
+                    <FaFilePdf size={30} />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p>No notes found.</p>
+            )}
           </div>
         </main>
       </div>
