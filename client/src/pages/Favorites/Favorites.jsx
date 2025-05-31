@@ -6,6 +6,8 @@ import { Swiper, SwiperSlide, useSwiper } from "swiper/react";
 import "swiper/css";
 import { sliderSettings } from "../../utils/common";
 import { AiFillHeart } from "react-icons/ai";
+import { FaFilePdf, FaChevronDown } from "react-icons/fa";
+import { GiPlayButton } from "react-icons/gi";
 import axios from "axios";
 import useVideos from "../../hooks/useVideos";
 import useNotes from "../../hooks/useNotes";
@@ -15,11 +17,19 @@ import { truncate } from "lodash";
 const Favorites = () => {
   const [favorites, setFavorites] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [filterType, setFilterType] = useState("all"); // Filtre türü: all, video, note
+  const [dropdownOpen, setDropdownOpen] = useState(false); // Dropdown menü durumu
   const { data: videos, isError: isVideoError, isLoading: isVideoLoading } = useVideos();
   const { data: notes, isError: isNoteError, isLoading: isNoteLoading } = useNotes();
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const currentUserEmail = user.email || "";
+
+  // Helper function to format note/video URL
+  const getContentUrl = (url) => {
+    const baseUrl = "http://localhost:8000";
+    return url.startsWith("http") ? url : `${baseUrl}${url}`;
+  };
 
   // Favori videoları ve notları çekme
   const fetchFavorites = async () => {
@@ -46,6 +56,7 @@ const Favorites = () => {
           creator: video.userEmail.split("@")[0],
           date: video.createdAt,
           courseName: video.courseName,
+          url: video.videoUrl,
         })),
         ...favNotes.map((note) => ({
           id: note.id,
@@ -55,6 +66,7 @@ const Favorites = () => {
           creator: note.userEmail.split("@")[0],
           date: note.createdAt,
           courseName: note.courseName,
+          url: note.noteUrl,
         })),
       ];
 
@@ -81,11 +93,32 @@ const Favorites = () => {
     }
   };
 
+  // İçeriği açma fonksiyonu
+  const handleOpenContent = (url) => {
+    window.open(getContentUrl(url), "_blank");
+  };
+
+  // Dropdown menüyü açma/kapama
+  const toggleDropdown = () => {
+    setDropdownOpen((prev) => !prev);
+  };
+
+  // Filtre türünü seçme
+  const selectFilterType = (type) => {
+    setFilterType(type);
+    setDropdownOpen(false);
+  };
+
   useEffect(() => {
     if (!isVideoLoading && !isNoteLoading) {
       fetchFavorites();
     }
   }, [isVideoLoading, isNoteLoading, videos, notes]);
+
+  // Filtrelenmiş favorileri oluştur
+  const filteredFavorites = favorites.filter((card) =>
+    filterType === "all" ? true : card.type === filterType
+  );
 
   if (isVideoError || isNoteError) {
     return (
@@ -119,10 +152,38 @@ const Favorites = () => {
             <span className="primaryText">Favorites</span>
           </div>
 
+          <div className="f-filter-bar">
+            <span className="secondaryText">Select:</span>
+            <div className="f-selection-bar">
+              <input
+                type="text"
+                value={filterType === "all" ? "All" : filterType === "video" ? "Videos" : "Notes"}
+                readOnly
+                className="f-filter-input"
+              />
+              <button className="f-dropdown-button" onClick={toggleDropdown}>
+                <FaChevronDown color="#d06382" />
+              </button>
+              {dropdownOpen && (
+                <ul className="f-dropdown-menu">
+                  <li className="f-dropdown-item" onClick={() => selectFilterType("all")}>
+                    All
+                  </li>
+                  <li className="f-dropdown-item" onClick={() => selectFilterType("video")}>
+                    Videos
+                  </li>
+                  <li className="f-dropdown-item" onClick={() => selectFilterType("note")}>
+                    Notes
+                  </li>
+                </ul>
+              )}
+            </div>
+          </div>
+
           <Swiper {...sliderSettings}>
             <SliderButtons />
-            {favorites.length > 0 ? (
-              favorites.map((card, i) => (
+            {filteredFavorites.length > 0 ? (
+              filteredFavorites.map((card, i) => (
                 <SwiperSlide key={`${card.type}-${card.id}`}>
                   <div className="flexColStart f-card">
                     <button
@@ -134,13 +195,25 @@ const Favorites = () => {
                     <img
                       src={card.image}
                       alt={card.type}
-                      onError={(e) => (e.target.src = card.type === "video" ? "/video_icon.png" : "/note_icon.png")}
+                      onError={(e) =>
+                        (e.target.src = card.type === "video" ? "/video_icon.png" : "/note_icon.png")
+                      }
                     />
                     <span className="purpleText">{truncate(card.title, { length: 30 })}</span>
                     <span className="greenText">{card.creator}</span>
                     <span className="secondaryText f-date">
                       <span>{new Date(card.date).toLocaleDateString()}</span>
                     </span>
+                    <button
+                      className="flexCenter button2"
+                      onClick={() => handleOpenContent(card.url)}
+                    >
+                      {card.type === "video" ? (
+                        <GiPlayButton size={30} />
+                      ) : (
+                        <FaFilePdf size={30} />
+                      )}
+                    </button>
                   </div>
                 </SwiperSlide>
               ))

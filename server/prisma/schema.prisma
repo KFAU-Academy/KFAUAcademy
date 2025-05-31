@@ -60,6 +60,5 @@ model Announcement {
     owner     User     @relation("Owner", fields: [userEmail], references: [email])
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
-
     @@unique(fields: [title])
 }
