@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./Notes.css";
 import Navbar from "../../components/Navbar/Navbar";
 import { FaSearch, FaChevronDown, FaFilePdf } from "react-icons/fa";
@@ -6,12 +6,33 @@ import useNotes from "../../hooks/useNotes";
 import { PuffLoader } from "react-spinners";
 import { AiFillHeart } from "react-icons/ai";
 import { truncate } from "lodash";
+import axios from "axios";
 
 const Notes = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [favNotes, setFavNotes] = useState([]);
   const { data, isError, isLoading } = useNotes();
+
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const currentUserEmail = user.email || "";
+
+  // Favori notları çekme
+  const fetchFavNotes = async () => {
+    try {
+      const res = await axios.post("/api/user/allNoteFavs", { email: currentUserEmail });
+      setFavNotes(res.data.favNotesID || []);
+    } catch (error) {
+      console.error("Error fetching favorite notes", error);
+    }
+  };
+
+  useEffect(() => {
+    if (!isLoading) {
+      fetchFavNotes();
+    }
+  }, [isLoading]);
 
   if (isError) {
     return (
@@ -34,8 +55,6 @@ const Notes = () => {
       </div>
     );
   }
-
-  console.log(data);
 
   const courseOptions = [
     "Operating Systems",
@@ -61,6 +80,20 @@ const Notes = () => {
     setSearchQuery(e.target.value);
   };
 
+  // Notu favorilere ekleme/çıkarma
+  const handleToggleFavorite = async (noteId) => {
+    try {
+      await axios.post(`/api/user/toFavNote/${noteId}`, { email: currentUserEmail });
+      setFavNotes((prev) =>
+        prev.includes(noteId)
+          ? prev.filter((id) => id !== noteId)
+          : [...prev, noteId]
+      );
+    } catch (error) {
+      console.error("Error toggling favorite note", error);
+    }
+  };
+
   // Helper function to format note URL
   const getNoteUrl = (noteUrl) => {
     const baseUrl = "http://localhost:8000";
@@ -77,7 +110,6 @@ const Notes = () => {
     <section className="n-wrapper">
       <Navbar />
       <div className="paddings flexCenter n-container">
-        {/* Selection bar */}
         <div className="selection-bar">
           <input
             type="text"
@@ -111,7 +143,6 @@ const Notes = () => {
           )}
         </div>
 
-        {/* Search bar */}
         <div className="search-bar">
           <FaSearch color="#d06382" size={20} />
           <input
@@ -124,17 +155,24 @@ const Notes = () => {
           <button className="button4">Search</button>
         </div>
 
-        {/* Notes */}
         <main className="ns-container">
           <div className="paddings flexCenter notes">
             {filteredNotes && filteredNotes.length > 0 ? (
               filteredNotes.map((card, i) => (
-                <div key={i} className="flexColStart n-card">
-                  <AiFillHeart size={30} color="#fff2f9" />
+                <div key={card.id} className="flexColStart n-card">
+                  <button
+                    className="flexCenter button2"
+                    onClick={() => handleToggleFavorite(card.id)}
+                  >
+                    <AiFillHeart
+                      size={30}
+                      color={favNotes.includes(card.id) ? "#c40a5d" : "#fff2f9"}
+                    />
+                  </button>
                   <img
                     src={card.image || "/note_icon.png"}
                     alt="note"
-                    onError={(e) => (e.target.src = "/note_icon.png")} // Fallback image if loading fails
+                    onError={(e) => (e.target.src = "/note_icon.png")}
                   />
                   <span className="purpleText">
                     {truncate(card.noteTitle, { length: 30 })}
