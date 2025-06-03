@@ -38,13 +38,13 @@ const MyNotes = () => {
         if (Array.isArray(response.data)) {
           setUploadedNotes(response.data);
         } else {
-          console.error("API cevabı dizi değil:", response.data);
+          console.error("API response is not an array:", response.data);
           setUploadedNotes([]);
         }
       } catch (err) {
-        console.error("Notlar çekilirken hata:", err);
+        console.error("Error fetching notes:", err);
         setUploadedNotes([]);
-        alert("Notlar yüklenirken bir hata oluştu: " + err.message);
+        alert("An error occurred while loading the notes: " + err.message);
       }
     };
     fetchNotes();
@@ -76,7 +76,7 @@ const MyNotes = () => {
     ) {
       if (noteName.trim() === "") setNoteNameError(true);
       if (noteTitle.trim() === "") setNoteTitleError(true);
-      if (!noteFile && !editNoteId) alert("Lütfen bir not dosyası seçin.");
+      if (!noteFile && !editNoteId) alert("Please select a note file.");
       return;
     }
 
@@ -111,8 +111,8 @@ const MyNotes = () => {
       setShowModal(false);
       setEditNoteId(null);
     } catch (err) {
-      console.error("Not işlem hatası:", err);
-      alert("Not işlenirken bir hata oluştu: " + err.message);
+      console.error("Error processing note:", err);
+      alert("An error occurred while processing the note: " + err.message);
     }
   };
 
@@ -129,8 +129,8 @@ const MyNotes = () => {
       await axios.delete("/api/note/" + noteId);
       setUploadedNotes(uploadedNotes.filter((note) => note.id !== noteId));
     } catch (err) {
-      console.error("Not silme hatası:", err);
-      alert("Not silinirken bir hata oluştu.");
+      console.error("Error deleting note:", err);
+      alert("An error occurred while deleting the note.");
     }
   };
 
@@ -141,18 +141,18 @@ const MyNotes = () => {
         <Sidebar />
         <main className="ma-container">
           <div className="ma-head flexStart">
-            <span className="primaryText">Notlarım</span>
+            <span className="primaryText">My Notes</span>
             <button
               className="flexStart add-button"
               onClick={() => setShowModal(true)}
             >
               <img
                 src={greenAdd}
-                alt="Not Ekle"
-                title="Not Ekle"
+                alt="Add Note"
+                title="Add Note"
                 className="add-icon"
               />
-              <span>Not Ekle</span>
+              <span>Add Note</span>
             </button>
           </div>
 
@@ -164,7 +164,7 @@ const MyNotes = () => {
                   <div className="flexColStart mv-card">
                     <img
                       src={note.image || "/note_icon.png"}
-                      alt="Not Simgesi"
+                      alt="Note Icon"
                       className="mv-card-icon"
                     />
                     <h3>{note.courseName}</h3>
@@ -174,13 +174,13 @@ const MyNotes = () => {
                         className="button2"
                         onClick={() => handleEdit(note.id)}
                       >
-                        Düzenle
+                        Edit
                       </button>
                       <button
                         className="button2"
                         onClick={() => handleDelete(note.id)}
                       >
-                        Sil
+                        Delete
                       </button>
                       <button
                         className="flexCenter button2"
@@ -201,7 +201,7 @@ const MyNotes = () => {
             ) : (
               <SwiperSlide>
                 <div className="flexColStart mv-card">
-                  <p>Henüz not bulunmamaktadır.</p>
+                  <p>No notes have been uploaded yet.</p>
                 </div>
               </SwiperSlide>
             )}
@@ -212,14 +212,14 @@ const MyNotes = () => {
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h3>{editNoteId ? "Notu Düzenle" : "Yeni Not Ekle"}</h3>
+            <h3>{editNoteId ? "Edit Note" : "Add New Note"}</h3>
             <select
               value={noteName}
               onChange={handleNoteNameChange}
               className="input-field dropdown-field"
             >
               <option value="" disabled>
-                Ders Seçin
+                Select a Course
               </option>
               {courseOptions.map((course, index) => (
                 <option key={index} value={course}>
@@ -228,17 +228,17 @@ const MyNotes = () => {
               ))}
             </select>
             {noteNameError && (
-              <p className="mn-error-message">Ders adı gerekli.</p>
+              <p className="mn-error-message">Course name is required.</p>
             )}
             <input
               type="text"
-              placeholder="Not Başlığını Girin"
+              placeholder="Enter Note Title"
               value={noteTitle}
               onChange={handleNoteTitleChange}
               className="input-field"
             />
             {noteTitleError && (
-              <p className="mn-error-message">Not başlığı gerekli.</p>
+              <p className="mn-error-message">Note title is required.</p>
             )}
             <input
               type="file"
@@ -248,7 +248,7 @@ const MyNotes = () => {
             />
             <div className="modal-buttons">
               <button onClick={handleUpload} className="upload-button">
-                {editNoteId ? "Kaydet" : "Yükle"}
+                {editNoteId ? "Save" : "Upload"}
               </button>
               <button
                 onClick={() => {
@@ -257,7 +257,7 @@ const MyNotes = () => {
                 }}
                 className="notes-cancel-button"
               >
-                İptal
+                Cancel
               </button>
             </div>
           </div>

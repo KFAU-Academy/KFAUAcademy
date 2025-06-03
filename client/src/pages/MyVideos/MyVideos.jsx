@@ -26,7 +26,7 @@ const MyVideos = () => {
     "Modern Programming Languages",
   ];
 
-  // MyNotes'taki userEmail alma yöntemine uyumlu hale getirdim
+  // Adapted to MyNotes' way of getting userEmail
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userEmail = user.email || "";
 
@@ -39,13 +39,13 @@ const MyVideos = () => {
         if (Array.isArray(response.data)) {
           setUploadedVideos(response.data);
         } else {
-          console.error("API cevabı dizi değil:", response.data);
+          console.error("API response is not an array:", response.data);
           setUploadedVideos([]);
         }
       } catch (err) {
-        console.error("Videolar çekilirken hata:", err);
+        console.error("Error fetching videos:", err);
         setUploadedVideos([]);
-        alert("Videolar yüklenirken bir hata oluştu: " + err.message);
+        alert("An error occurred while loading videos: " + err.message);
       }
     };
     if (userEmail) {
@@ -79,8 +79,7 @@ const MyVideos = () => {
     ) {
       if (courseName.trim() === "") setCourseNameError(true);
       if (videoTitle.trim() === "") setVideoTitleError(true);
-      if (!videoFile && !editingVideoId)
-        alert("Lütfen bir video dosyası seçin.");
+      if (!videoFile && !editingVideoId) alert("Please select a video file.");
       return;
     }
 
@@ -119,8 +118,8 @@ const MyVideos = () => {
       setShowModal(false);
       setEditingVideoId(null);
     } catch (err) {
-      console.error("Video işlem hatası:", err);
-      alert("Video işlenirken bir hata oluştu: " + err.message);
+      console.error("Video processing error:", err);
+      alert("An error occurred while processing the video: " + err.message);
     }
   };
 
@@ -137,8 +136,8 @@ const MyVideos = () => {
       await axios.delete("/api/video/" + id);
       setUploadedVideos(uploadedVideos.filter((video) => video.id !== id));
     } catch (err) {
-      console.error("Video silme hatası:", err);
-      alert("Video silinirken bir hata oluştu.");
+      console.error("Error deleting video:", err);
+      alert("An error occurred while deleting the video.");
     }
   };
 
@@ -149,18 +148,18 @@ const MyVideos = () => {
         <Sidebar />
         <main className="ma-container">
           <div className="ma-head flexStart">
-            <span className="primaryText">Videolarım</span>
+            <span className="primaryText">My Videos</span>
             <button
               className="flexStart add-button"
               onClick={() => setShowModal(true)}
             >
               <img
                 src={greenAdd}
-                alt="Video Ekle"
-                title="Video Ekle"
+                alt="Add Video"
+                title="Add Video"
                 className="add-icon"
               />
-              <span>Video Ekle</span>
+              <span>Add Video</span>
             </button>
           </div>
 
@@ -172,7 +171,7 @@ const MyVideos = () => {
                   <div className="flexColStart mv-card">
                     <img
                       src={video.image || "/video_icon.png"}
-                      alt="Video Simgesi"
+                      alt="Video Icon"
                       className="mv-card-icon"
                     />
                     <h3>{video.courseName}</h3>
@@ -182,13 +181,13 @@ const MyVideos = () => {
                         className="button2"
                         onClick={() => handleEdit(video.id)}
                       >
-                        Düzenle
+                        Edit
                       </button>
                       <button
                         className="button2"
                         onClick={() => handleDelete(video.id)}
                       >
-                        Sil
+                        Delete
                       </button>
                       <button
                         className="flexCenter button2"
@@ -209,7 +208,7 @@ const MyVideos = () => {
             ) : (
               <SwiperSlide>
                 <div className="flexColStart mv-card">
-                  <p>Henüz video bulunmamaktadır.</p>
+                  <p>No videos yet.</p>
                 </div>
               </SwiperSlide>
             )}
@@ -220,14 +219,14 @@ const MyVideos = () => {
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h3>{editingVideoId ? "Videoyu Düzenle" : "Yeni Video Ekle"}</h3>
+            <h3>{editingVideoId ? "Edit Video" : "Add New Video"}</h3>
             <select
               value={courseName}
               onChange={handleCourseNameChange}
               className="input-field dropdown-field"
             >
               <option value="" disabled>
-                Ders Seçin
+                Select a Course
               </option>
               {courseOptions.map((course, index) => (
                 <option key={index} value={course}>
@@ -236,17 +235,17 @@ const MyVideos = () => {
               ))}
             </select>
             {courseNameError && (
-              <p className="mn-error-message">Ders adı gerekli.</p>
+              <p className="mn-error-message">Course name is required.</p>
             )}
             <input
               type="text"
-              placeholder="Video Başlığını Girin"
+              placeholder="Enter Video Title"
               value={videoTitle}
               onChange={handleVideoTitleChange}
               className="input-field"
             />
             {videoTitleError && (
-              <p className="mn-error-message">Video başlığı gerekli.</p>
+              <p className="mn-error-message">Video title is required.</p>
             )}
             <input
               type="file"
@@ -256,7 +255,7 @@ const MyVideos = () => {
             />
             <div className="modal-buttons">
               <button onClick={handleUpload} className="upload-button">
-                {editingVideoId ? "Kaydet" : "Yükle"}
+                {editingVideoId ? "Save" : "Upload"}
               </button>
               <button
                 onClick={() => {
@@ -265,7 +264,7 @@ const MyVideos = () => {
                 }}
                 className="notes-cancel-button"
               >
-                İptal
+                Cancel
               </button>
             </div>
           </div>
