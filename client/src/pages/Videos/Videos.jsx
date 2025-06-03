@@ -22,7 +22,9 @@ const Videos = () => {
   // Favori videoları çekme
   const fetchFavVideos = async () => {
     try {
-      const res = await axios.post("/api/user/allVideoFavs", { email: currentUserEmail });
+      const res = await axios.post("/api/user/allVideoFavs", {
+        email: currentUserEmail,
+      });
       setFavVideos(res.data.favVideosID || []);
     } catch (error) {
       console.error("Error fetching favorite videos", error);
@@ -76,7 +78,9 @@ const Videos = () => {
   // Videoyu favorilere ekleme/çıkarma
   const handleToggleFavorite = async (videoId) => {
     try {
-      await axios.post(`/api/user/toFavVideo/${videoId}`, { email: currentUserEmail });
+      await axios.post(`/api/user/toFavVideo/${videoId}`, {
+        email: currentUserEmail,
+      });
       setFavVideos((prev) =>
         prev.includes(videoId)
           ? prev.filter((id) => id !== videoId)
@@ -94,10 +98,17 @@ const Videos = () => {
   };
 
   // Filter videos based on selected course and search query
-  const filteredVideos = data && data.filter((card) =>
-    (searchInput ? card.courseName.toLowerCase().includes(searchInput.toLowerCase()) : true) &&
-    (searchQuery ? card.videoTitle.toLowerCase().includes(searchQuery.toLowerCase()) : true)
-  );
+  const filteredVideos =
+    data &&
+    data.filter(
+      (card) =>
+        (searchInput
+          ? card.courseName.toLowerCase().includes(searchInput.toLowerCase())
+          : true) &&
+        (searchQuery
+          ? card.videoTitle.toLowerCase().includes(searchQuery.toLowerCase())
+          : true)
+    );
 
   return (
     <section className="v-wrapper">
@@ -162,7 +173,9 @@ const Videos = () => {
                   >
                     <AiFillHeart
                       size={30}
-                      color={favVideos.includes(card.id) ? "#c40a5d" : "#fff2f9"}
+                      color={
+                        favVideos.includes(card.id) ? "#c40a5d" : "#fff2f9"
+                      }
                     />
                   </button>
                   <img
@@ -173,10 +186,14 @@ const Videos = () => {
                   <span className="purpleText">
                     {truncate(card.videoTitle, { length: 30 })}
                   </span>
-                  <span className="greenText">{card.userEmail.split("@")[0]}</span>
+                  <span className="greenText">
+                    {card.userEmail.split("@")[0]}
+                  </span>
                   <button
                     className="flexCenter button2"
-                    onClick={() => window.open(getVideoUrl(card.videoUrl), "_blank")}
+                    onClick={() =>
+                      window.open(getVideoUrl(card.videoUrl), "_blank")
+                    }
                   >
                     <GiPlayButton size={30} />
                   </button>

@@ -19,8 +19,16 @@ const Favorites = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [filterType, setFilterType] = useState("all"); // Filtre türü: all, video, note
   const [dropdownOpen, setDropdownOpen] = useState(false); // Dropdown menü durumu
-  const { data: videos, isError: isVideoError, isLoading: isVideoLoading } = useVideos();
-  const { data: notes, isError: isNoteError, isLoading: isNoteLoading } = useNotes();
+  const {
+    data: videos,
+    isError: isVideoError,
+    isLoading: isVideoLoading,
+  } = useVideos();
+  const {
+    data: notes,
+    isError: isNoteError,
+    isLoading: isNoteLoading,
+  } = useNotes();
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const currentUserEmail = user.email || "";
@@ -43,8 +51,12 @@ const Favorites = () => {
       const favNoteIds = noteFavsRes.data.favNotesID || [];
 
       // Videoları ve notları ID'lere göre filtrele
-      const favVideos = videos ? videos.filter((video) => favVideoIds.includes(video.id)) : [];
-      const favNotes = notes ? notes.filter((note) => favNoteIds.includes(note.id)) : [];
+      const favVideos = videos
+        ? videos.filter((video) => favVideoIds.includes(video.id))
+        : [];
+      const favNotes = notes
+        ? notes.filter((note) => favNoteIds.includes(note.id))
+        : [];
 
       // Videoları ve notları birleştir
       const combinedFavorites = [
@@ -82,9 +94,13 @@ const Favorites = () => {
   const handleToggleFavorite = async (id, type) => {
     try {
       if (type === "video") {
-        await axios.post(`/api/user/toFavVideo/${id}`, { email: currentUserEmail });
+        await axios.post(`/api/user/toFavVideo/${id}`, {
+          email: currentUserEmail,
+        });
       } else if (type === "note") {
-        await axios.post(`/api/user/toFavNote/${id}`, { email: currentUserEmail });
+        await axios.post(`/api/user/toFavNote/${id}`, {
+          email: currentUserEmail,
+        });
       }
       // Favori listesinden öğeyi çıkar
       setFavorites((prev) => prev.filter((item) => item.id !== id));
@@ -157,7 +173,13 @@ const Favorites = () => {
             <div className="f-selection-bar">
               <input
                 type="text"
-                value={filterType === "all" ? "All" : filterType === "video" ? "Videos" : "Notes"}
+                value={
+                  filterType === "all"
+                    ? "All"
+                    : filterType === "video"
+                    ? "Videos"
+                    : "Notes"
+                }
                 readOnly
                 className="f-filter-input"
               />
@@ -166,13 +188,22 @@ const Favorites = () => {
               </button>
               {dropdownOpen && (
                 <ul className="f-dropdown-menu">
-                  <li className="f-dropdown-item" onClick={() => selectFilterType("all")}>
+                  <li
+                    className="f-dropdown-item"
+                    onClick={() => selectFilterType("all")}
+                  >
                     All
                   </li>
-                  <li className="f-dropdown-item" onClick={() => selectFilterType("video")}>
+                  <li
+                    className="f-dropdown-item"
+                    onClick={() => selectFilterType("video")}
+                  >
                     Videos
                   </li>
-                  <li className="f-dropdown-item" onClick={() => selectFilterType("note")}>
+                  <li
+                    className="f-dropdown-item"
+                    onClick={() => selectFilterType("note")}
+                  >
                     Notes
                   </li>
                 </ul>
@@ -196,10 +227,15 @@ const Favorites = () => {
                       src={card.image}
                       alt={card.type}
                       onError={(e) =>
-                        (e.target.src = card.type === "video" ? "/video_icon.png" : "/note_icon.png")
+                        (e.target.src =
+                          card.type === "video"
+                            ? "/video_icon.png"
+                            : "/note_icon.png")
                       }
                     />
-                    <span className="purpleText">{truncate(card.title, { length: 30 })}</span>
+                    <span className="purpleText">
+                      {truncate(card.title, { length: 30 })}
+                    </span>
                     <span className="greenText">{card.creator}</span>
                     <span className="secondaryText f-date">
                       <span>{new Date(card.date).toLocaleDateString()}</span>

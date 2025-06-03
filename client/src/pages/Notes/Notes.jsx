@@ -21,7 +21,9 @@ const Notes = () => {
   // Favori notları çekme
   const fetchFavNotes = async () => {
     try {
-      const res = await axios.post("/api/user/allNoteFavs", { email: currentUserEmail });
+      const res = await axios.post("/api/user/allNoteFavs", {
+        email: currentUserEmail,
+      });
       setFavNotes(res.data.favNotesID || []);
     } catch (error) {
       console.error("Error fetching favorite notes", error);
@@ -83,7 +85,9 @@ const Notes = () => {
   // Notu favorilere ekleme/çıkarma
   const handleToggleFavorite = async (noteId) => {
     try {
-      await axios.post(`/api/user/toFavNote/${noteId}`, { email: currentUserEmail });
+      await axios.post(`/api/user/toFavNote/${noteId}`, {
+        email: currentUserEmail,
+      });
       setFavNotes((prev) =>
         prev.includes(noteId)
           ? prev.filter((id) => id !== noteId)
@@ -101,10 +105,17 @@ const Notes = () => {
   };
 
   // Filter notes based on selected course and search query
-  const filteredNotes = data && data.filter((card) =>
-    (selectedCourse ? card.courseName.toLowerCase().includes(selectedCourse.toLowerCase()) : true) &&
-    (searchQuery ? card.noteTitle.toLowerCase().includes(searchQuery.toLowerCase()) : true)
-  );
+  const filteredNotes =
+    data &&
+    data.filter(
+      (card) =>
+        (selectedCourse
+          ? card.courseName.toLowerCase().includes(selectedCourse.toLowerCase())
+          : true) &&
+        (searchQuery
+          ? card.noteTitle.toLowerCase().includes(searchQuery.toLowerCase())
+          : true)
+    );
 
   return (
     <section className="n-wrapper">
@@ -124,10 +135,7 @@ const Notes = () => {
 
           {dropdownOpen && (
             <ul className="dropdown-menu">
-              <li
-                className="dropdown-item"
-                onClick={() => selectCourse("")}
-              >
+              <li className="dropdown-item" onClick={() => selectCourse("")}>
                 All Courses
               </li>
               {courseOptions.map((course, index) => (
@@ -177,10 +185,14 @@ const Notes = () => {
                   <span className="purpleText">
                     {truncate(card.noteTitle, { length: 30 })}
                   </span>
-                  <span className="greenText">{card.userEmail.split("@")[0]}</span>
+                  <span className="greenText">
+                    {card.userEmail.split("@")[0]}
+                  </span>
                   <button
                     className="flexCenter button2"
-                    onClick={() => window.open(getNoteUrl(card.noteUrl), "_blank")}
+                    onClick={() =>
+                      window.open(getNoteUrl(card.noteUrl), "_blank")
+                    }
                   >
                     <FaFilePdf size={30} />
                   </button>

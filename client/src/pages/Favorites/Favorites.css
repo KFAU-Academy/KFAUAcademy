@@ -121,6 +121,7 @@
     box-shadow: 0px 0px 5px 1px rgba(0,0,0,0.25);
 }
 /*...*/
+
 /* Filtreleme çubuğu */
 .f-filter-bar {
     display: flex;
@@ -185,18 +186,6 @@
 
 .f-dropdown-item:hover {
     background-color: #ffd5e8;
-}
-
-/* Medya sorgusu: Küçük ekranlar için düzen */
-@media (max-width: 845px) {
-    .f-filter-bar {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .f-selection-bar {
-        width: 100%;
-        max-width: 200px;
-    }
 }
 
 @media (max-width: 845px) {

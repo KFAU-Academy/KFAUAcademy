@@ -1,75 +1,93 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState } from "react";
 import "./Announcement.css";
 import { Swiper, SwiperSlide, useSwiper } from "swiper/react";
 import "swiper/css";
 import { sliderSettings } from "../../utils/common";
+import { PuffLoader } from "react-spinners";
 import { MdOutlineAnnouncement } from "react-icons/md";
+import useAnnouncements from "../../hooks/useAnnouncements";
+import dayjs from "dayjs";
 
 const Announcement = () => {
-  const [announcements, setAnnouncements] = useState([]);
+  const { data, isError, isLoading } = useAnnouncements();
   const [isContentOpen, setContentOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState(null);
 
-  // Tüm duyuruları API'den çekme
-  const fetchAllAnnouncements = async () => {
-    try {
-      const res = await axios.get("/api/announcement/allann");
-      setAnnouncements(res.data);
-    } catch (error) {
-      console.error("Error fetching announcements", error);
-    }
-  };
+  if (isError) {
+    return (
+      <div className="a-wrapper">
+        <span>Error while fetching announcements</span>
+      </div>
+    );
+  }
 
-  // Komponent yüklendiğinde duyuruları çek
-  useEffect(() => {
-    fetchAllAnnouncements();
-  }, []);
-
-  // Duyuru içeriğine tıklama
+  if (isLoading) {
+    return (
+      <div className="a-wrapper flexCenter" style={{ height: "60vh" }}>
+        <PuffLoader
+          height="80"
+          width="80"
+          radius={1}
+          color="#b6306c"
+          aria-label="puff-loading"
+        />
+      </div>
+    );
+  }
   const handleContentClick = (announcement) => {
     setSelectedContent(announcement);
     setContentOpen(true);
   };
 
-  // Modal kapatma
   const closeModal = () => {
     setContentOpen(false);
+    setFormData({
+      category: "",
+      title: "",
+      content: "",
+    });
     setSelectedContent(null);
   };
-
   return (
-    <div className="a-wrapper">
+    <section className="a-wrapper">
       <div className="paddings a-container">
         <div className="a-head flexColStart">
           <span className="primaryText">Announcements</span>
         </div>
 
-        <Swiper {...sliderSettings}>
-          <SliderButtons />
-          {announcements.map((card) => {
-            let iconSrc = "/course_icon.png"; // Varsayılan ikon
-            if (card.category === "club") {
-              iconSrc = "/club_icon.png";
-            } else if (card.category === "note") {
-              iconSrc = "/course_icon.png";
-            } else if (card.category === "video") {
-              iconSrc = "/video_icon.png";
-            }
+        {data && data.length > 0 && (
+          <Swiper {...sliderSettings}>
+            <SliderButtons />
+            {data.map((card) => {
+              let iconSrc = "/course_icon.png"; // default icon
+              if (card.category === "club") {
+                iconSrc = "/club_icon.png";
+              } else if (card.category === "note") {
+                iconSrc = "/course_icon.png";
+              } else if (card.category === "video") {
+                iconSrc = "/course_icon.png";
+              }
 
-            return (
-              <SwiperSlide key={card.id}>
-                <div className="flexColStart a-card">
-                  <img src={iconSrc} alt="announcement" className="a-card-icon" />
-                  <span className="purpleText">{card.title}</span>
-                  <span className="greenText">{card.creator}</span>
-                  <span className="secondaryText a-category">
-                    {card.category}
-                  </span>
-                  <span className="secondaryText a-date">
-                    <span>{new Date(card.date).toLocaleDateString()}</span>
-                  </span>
-                  <div className="flexCenter a-card-buttons">
+              return (
+                <SwiperSlide key={card.id}>
+                  <div className="flexColStart a-card">
+                    <img
+                      src={iconSrc}
+                      alt="announcement"
+                      className="ma-card-icon"
+                    />
+                    <span className="purpleText">{card.title}</span>
+                    <span className="greenText">
+                      {card.owner?.fullName || "Unknown"}
+                    </span>
+                    <span className="secondaryText a-category">
+                      {card.category}
+                    </span>
+                    <span className="secondaryText a-date">
+                      <span>
+                        {dayjs(card.createdAt).format("DD/MM/YYYY HH:mm")}
+                      </span>
+                    </span>
                     <button
                       className="button2"
                       onClick={() => handleContentClick(card)}
@@ -77,15 +95,14 @@ const Announcement = () => {
                       <MdOutlineAnnouncement size={30} />
                     </button>
                   </div>
-                </div>
-              </SwiperSlide>
-            );
-          })}
-        </Swiper>
+                </SwiperSlide>
+              );
+            })}
+          </Swiper>
+        )}
       </div>
-
       {isContentOpen && (
-        <>
+        <div className="modal-container">
           <div className="ma-modal-overlay" onClick={closeModal}></div>
           <div className="ma-content-modal">
             <div className="modal-header">
@@ -93,23 +110,26 @@ const Announcement = () => {
               <button onClick={closeModal}>X</button>
             </div>
             <div className="modal-body">
-              <h3>{selectedContent.title}</h3>
+              <h3>{selectedContent?.title}</h3>
               <p>
-                <strong>Category:</strong> {selectedContent.category}
+                <strong>Category:</strong> {selectedContent?.category}
               </p>
               <p>
-                <strong>Creator:</strong> {selectedContent.creator}
+                <strong>Creator:</strong>{" "}
+                {selectedContent?.owner?.fullName || "Unknown"}
               </p>
               <p>
                 <strong>Date:</strong>{" "}
-                {new Date(selectedContent.date).toLocaleDateString()}
+                {selectedContent?.createdAt
+                  ? dayjs(selectedContent.createdAt).format("DD/MM/YYYY HH:mm")
+                  : "N/A"}
               </p>
-              <p>{selectedContent.content}</p>
+              <p>{selectedContent?.content}</p>
             </div>
           </div>
-        </>
+        </div>
       )}
-    </div>
+    </section>
   );
 };
 

@@ -79,8 +79,7 @@ const MyVideos = () => {
     ) {
       if (courseName.trim() === "") setCourseNameError(true);
       if (videoTitle.trim() === "") setVideoTitleError(true);
-      if (!videoFile && !editingVideoId)
-        alert("Please select a video file.");
+      if (!videoFile && !editingVideoId) alert("Please select a video file.");
       return;
     }
 
