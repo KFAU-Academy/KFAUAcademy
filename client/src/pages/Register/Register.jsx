@@ -26,7 +26,7 @@ const Register = () => {
 
     const regex = /^[A-Z][a-z]+ [A-Z][a-z]+$/;
     if (!regex.test(value)) {
-      setUsernameError("Username must be in 'Name Surname' format.");// Ad ve Soyadın baş harfleri büyük olmalı 
+      setUsernameError("Username must be in 'Name Surname' format."); // Ad ve Soyadın baş harfleri büyük olmalı
     } else {
       setUsernameError("");
     }
@@ -105,6 +105,15 @@ const Register = () => {
             autoClose: 3000,
           });
           navigate("/login");
+        } else if (response.status === 409) {
+          setFormError("User already registered with this email.");
+          toast.error(
+            "User already exists. Please use a different email or log in.",
+            {
+              position: "top-right",
+              autoClose: 3000,
+            }
+          );
         } else {
           setFormError(data.message || "Registration failed.");
           toast.error("Registration failed. Please try again.", {

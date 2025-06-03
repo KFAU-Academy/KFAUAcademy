@@ -243,6 +243,9 @@
   .add-button>.add-icon{
       max-width: 26%;
   }
+  .ma-buttons{
+    margin-top: 15px;
+  }
 }
 
 @media (max-width:1120px) {
