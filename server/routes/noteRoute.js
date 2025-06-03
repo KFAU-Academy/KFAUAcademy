@@ -4,11 +4,14 @@ import { uploadNote } from '../config/multerConfig.js'; // uploadNote import edi
 
 const router = express.Router();
 
-router.post('/create', uploadNote.single('file'), createNote);
-router.get('/allnotes', getAllNotes);
+// Spesifik route'lar önce
 router.get('/mynotes', getMyNotes);
-router.get('/:id', getNote);
+router.get('/allnotes', getAllNotes);
+
+// Dinamik route'lar sonra
+router.post('/create', uploadNote.single('file'), createNote);
 router.put('/:id', uploadNote.single('file'), updateNote);
+router.get('/:id', getNote);
 router.delete('/:id', deleteNote); 
 
 export { router as noteRoute };

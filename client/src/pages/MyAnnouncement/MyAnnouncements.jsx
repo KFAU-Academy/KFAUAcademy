@@ -133,7 +133,7 @@ const MyAnnouncements = () => {
   // Yüklenme durumu
   if (isLoading) {
     return (
-      <div className="ma-wrapper flexCenter" style={{ height: "60vh" }}>
+      <div className="loader-container" style={{ height: "60vh" }}>
         <PuffLoader
           height="80"
           width="80"

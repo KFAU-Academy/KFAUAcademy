@@ -47,7 +47,7 @@ const Videos = () => {
 
   if (isLoading) {
     return (
-      <div className="wrapper flexCenter" style={{ height: "60vh" }}>
+      <div className="loader-container" style={{ height: "60vh" }}>
         <PuffLoader
           height="80"
           width="80"
@@ -159,7 +159,6 @@ const Videos = () => {
             onChange={handleSearchChange}
             className="search-input"
           />
-          <button className="button4">Search</button>
         </div>
 
         <main className="vs-container">
@@ -168,7 +167,7 @@ const Videos = () => {
               filteredVideos.map((card, i) => (
                 <div key={card.id} className="flexColStart v-card">
                   <button
-                    className="flexCenter button2"
+                    className="flexCenter favbutton"
                     onClick={() => handleToggleFavorite(card.id)}
                   >
                     <AiFillHeart
