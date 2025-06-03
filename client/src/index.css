@@ -80,6 +80,19 @@
     align-items: flex-end;
   }
   
+  /* PuffLoader için özel stil */
+.loader-container {
+  position: fixed; /* Viewport’a göre sabit */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Navbar veya modal’ın üstünde */
+}
+
   .primaryText {
     color: #b6306c;
     font-weight: bold;
@@ -94,6 +107,11 @@
   .greenText{
     color: #506233;
     font-size: 1.7rem;
+    font-weight: 600;
+  }
+  .greenText2{
+    color: #506233;
+    font-size: 1.4rem;
     font-weight: 600;
   }
 

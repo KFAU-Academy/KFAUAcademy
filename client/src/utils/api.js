@@ -15,6 +15,7 @@ api.interceptors.response.use(
       status: error.response?.status,
       data: error.response?.data,
       requestData: error.config?.data,
+      headers: error.config?.headers,
       message: error.message,
     });
     return Promise.reject(error);
@@ -23,7 +24,7 @@ api.interceptors.response.use(
 
 export const getAllVideos = async () => {
   try {
-    const response = await api.get("video/allvideos", {
+    const response = await api.get("/video/allvideos", {
       timeout: 10 * 1000,
     });
     if (response.status === 400 || response.status === 500) {
@@ -38,7 +39,7 @@ export const getAllVideos = async () => {
 
 export const getAllNotes = async () => {
   try {
-    const response = await api.get("note/allnotes", {
+    const response = await api.get("/note/allnotes", {
       timeout: 10 * 1000,
     });
     if (response.status === 400 || response.status === 500) {
@@ -53,7 +54,7 @@ export const getAllNotes = async () => {
 
 export const getAllAnnouncements = async () => {
   try {
-    const response = await api.get("announcement/allann", {
+    const response = await api.get("/announcement/allann", {
       timeout: 10 * 1000,
     });
     if (response.status === 400 || response.status === 500) {
@@ -68,7 +69,7 @@ export const getAllAnnouncements = async () => {
 
 export const getMyAnnouncements = async (userEmail) => {
   try {
-    const response = await api.get(`announcement/myann?email=${userEmail}`, {
+    const response = await api.get(`/announcement/myann?email=${userEmail}`, {
       timeout: 10 * 1000,
     });
     if (response.status === 400 || response.status === 500) {
@@ -77,6 +78,38 @@ export const getMyAnnouncements = async (userEmail) => {
     return response.data;
   } catch (error) {
     toast.error("Failed to fetch your announcements");
+    throw error;
+  }
+};
+
+export const getMyVideos = async (userEmail) => {
+  try {
+    const response = await api.get(`/video/myvideos?email=${userEmail}`, {
+      timeout: 10 * 1000,
+    });
+    if (response.status === 400 || response.status === 500) {
+      throw response.data;
+    }
+    return response.data;
+  } catch (error) {
+    console.error("Get my videos error:", error);
+    toast.error("Failed to fetch your videos");
+    throw error;
+  }
+};
+
+export const getMyNotes = async (userEmail) => {
+  try {
+    const response = await api.get(`/note/mynotes?email=${userEmail}`, {
+      timeout: 10 * 1000,
+    });
+    if (response.status === 400 || response.status === 500) {
+      throw response.data;
+    }
+    return response.data;
+  } catch (error) {
+    console.error("Get my notes error:", error);
+    toast.error("Failed to fetch your notes");
     throw error;
   }
 };

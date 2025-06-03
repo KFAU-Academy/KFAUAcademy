@@ -1,23 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import "./MyVideos.css";
 import Navbar from "../../components/Navbar/Navbar";
 import Sidebar from "../../components/Sidebar/Sidebar";
-import greenAdd from "/green_add.png";
-import { GiPlayButton } from "react-icons/gi";
 import { Swiper, SwiperSlide, useSwiper } from "swiper/react";
 import "swiper/css";
 import { sliderSettings } from "../../utils/common";
-import axios from "axios";
+import { GiPlayButton } from "react-icons/gi";
+import { toast } from "react-toastify";
+import { PuffLoader } from "react-spinners";
+import { useMutation, useQueryClient } from "react-query";
+import useMyVideos from "../../hooks/useMyVideos";
+import { api } from "../../utils/api";
+import dayjs from "dayjs";
 
 const MyVideos = () => {
-  const [courseName, setCourseName] = useState("");
-  const [videoTitle, setVideoTitle] = useState("");
-  const [videoFile, setVideoFile] = useState(null);
-  const [uploadedVideos, setUploadedVideos] = useState([]);
-  const [showModal, setShowModal] = useState(false);
+  const [isModalOpen, setModalOpen] = useState(false);
+  const [editingVideo, setEditingVideo] = useState(null);
+  const [formData, setFormData] = useState({
+    courseName: "",
+    videoTitle: "",
+    file: null,
+  });
   const [courseNameError, setCourseNameError] = useState(false);
   const [videoTitleError, setVideoTitleError] = useState(false);
-  const [editingVideoId, setEditingVideoId] = useState(null);
 
   const courseOptions = [
     "Operating Systems",
@@ -26,123 +31,197 @@ const MyVideos = () => {
     "Modern Programming Languages",
   ];
 
-  // Adapted to MyNotes' way of getting userEmail
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const userEmail = user.email || "";
+  const currentUserEmail = user.email || "";
 
-  useEffect(() => {
-    const fetchVideos = async () => {
-      try {
-        const response = await axios.get("/api/video/allvideos", {
-          params: { userEmail },
+  console.log("Current user email:", currentUserEmail); // Debug log
+
+  if (!currentUserEmail) {
+    console.error("No user email found in localStorage");
+    toast.error("Please log in to manage videos");
+  }
+
+  const { data: videos, isError, isLoading } = useMyVideos(currentUserEmail);
+  const queryClient = useQueryClient();
+
+  const createVideoMutation = useMutation(
+    (formData) =>
+      api.post("/video/create", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      }),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(["myVideos", currentUserEmail]);
+        toast.success("Video created successfully");
+        setModalOpen(false);
+        setFormData({ courseName: "", videoTitle: "", file: null });
+      },
+      onError: (error) => {
+        console.error("Create video error:", {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message,
+          request: error.config?.data,
         });
-        if (Array.isArray(response.data)) {
-          setUploadedVideos(response.data);
-        } else {
-          console.error("API response is not an array:", response.data);
-          setUploadedVideos([]);
-        }
-      } catch (err) {
-        console.error("Error fetching videos:", err);
-        setUploadedVideos([]);
-        alert("An error occurred while loading videos: " + err.message);
-      }
-    };
-    if (userEmail) {
-      fetchVideos();
+        toast.error(
+          error.response?.data?.message ||
+            "Failed to create video. Please try again."
+        );
+      },
     }
-  }, [userEmail]);
+  );
 
-  const handleCourseNameChange = (e) => {
-    setCourseName(e.target.value);
-    if (e.target.value.trim() !== "") {
-      setCourseNameError(false);
+  const updateVideoMutation = useMutation(
+    ({ id, formData }) =>
+      api.put(`/video/${id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      }),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(["myVideos", currentUserEmail]);
+        toast.success("Video updated successfully");
+        setModalOpen(false);
+        setEditingVideo(null);
+        setFormData({ courseName: "", videoTitle: "", file: null });
+      },
+      onError: (error) => {
+        console.error("Update video error:", {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message,
+        });
+        toast.error(
+          error.response?.data?.message ||
+            "Failed to update video. Please try again."
+        );
+      },
     }
-  };
+  );
 
-  const handleVideoTitleChange = (e) => {
-    setVideoTitle(e.target.value);
-    if (e.target.value.trim() !== "") {
-      setVideoTitleError(false);
+  const deleteVideoMutation = useMutation(
+    (id) =>
+      api.delete(`/video/${id}`, {
+        data: { userEmail: currentUserEmail },
+      }),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(["myVideos", currentUserEmail]);
+        toast.success("Video deleted successfully");
+      },
+      onError: (error) => {
+        console.error("Delete video error:", {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message,
+        });
+        toast.error(
+          error.response?.data?.message ||
+            "Failed to delete video. Please try again."
+        );
+      },
     }
+  );
+
+  if (isError) {
+    console.error("useMyVideos error:", { isError, data: videos });
+    return (
+      <div className="mv-wrapper flexCenter">
+        <span className="secondaryText">Error while fetching your videos</span>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="loader-container" style={{ height: "60vh" }}>
+        <PuffLoader
+          height="80"
+          width="80"
+          radius={1}
+          color="#b6306c"
+          aria-label="puff-loading"
+        />
+      </div>
+    );
+  }
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "courseName" && value.trim()) setCourseNameError(false);
+    if (name === "videoTitle" && value.trim()) setVideoTitleError(false);
   };
 
   const handleFileChange = (e) => {
-    setVideoFile(e.target.files[0]);
+    setFormData((prev) => ({ ...prev, file: e.target.files[0] }));
   };
 
-  const handleUpload = async () => {
+  const handleSubmit = () => {
     if (
-      courseName.trim() === "" ||
-      videoTitle.trim() === "" ||
-      (!videoFile && !editingVideoId)
+      !formData.courseName ||
+      !formData.videoTitle ||
+      (!formData.file && !editingVideo)
     ) {
-      if (courseName.trim() === "") setCourseNameError(true);
-      if (videoTitle.trim() === "") setVideoTitleError(true);
-      if (!videoFile && !editingVideoId) alert("Please select a video file.");
+      if (!formData.courseName) setCourseNameError(true);
+      if (!formData.videoTitle) setVideoTitleError(true);
+      if (!formData.file && !editingVideo)
+        toast.error("Please select a video file.");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("courseName", courseName);
-    formData.append("videoTitle", videoTitle);
-    formData.append("userEmail", userEmail);
-    if (videoFile) {
-      formData.append("file", videoFile);
+    if (!currentUserEmail) {
+      toast.error("User not logged in. Please log in to continue.");
+      return;
     }
 
-    try {
-      if (editingVideoId) {
-        const response = await axios.put(
-          "/api/video/" + editingVideoId,
-          formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
-        setUploadedVideos(
-          uploadedVideos.map((video) =>
-            video.id === editingVideoId ? response.data.video : video
-          )
-        );
-      } else {
-        const response = await axios.post("/api/video/create", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        setUploadedVideos([response.data.video, ...uploadedVideos]);
-      }
+    const videoFormData = new FormData();
+    videoFormData.append("courseName", formData.courseName);
+    videoFormData.append("videoTitle", formData.videoTitle);
+    videoFormData.append("userEmail", currentUserEmail);
+    if (formData.file) {
+      videoFormData.append("file", formData.file);
+    }
 
-      setCourseName("");
-      setVideoTitle("");
-      setVideoFile(null);
-      setShowModal(false);
-      setEditingVideoId(null);
-    } catch (err) {
-      console.error("Video processing error:", err);
-      alert("An error occurred while processing the video: " + err.message);
+    if (editingVideo) {
+      updateVideoMutation.mutate({
+        id: editingVideo.id,
+        formData: videoFormData,
+      });
+    } else {
+      console.log("Creating video with data:", {
+        courseName: formData.courseName,
+        videoTitle: formData.videoTitle,
+        userEmail: currentUserEmail,
+        file: formData.file?.name,
+      });
+      createVideoMutation.mutate(videoFormData);
     }
   };
 
-  const handleEdit = (id) => {
-    const videoToEdit = uploadedVideos.find((video) => video.id === id);
-    setCourseName(videoToEdit.courseName);
-    setVideoTitle(videoToEdit.videoTitle);
-    setEditingVideoId(id);
-    setShowModal(true);
+  const handleDelete = (id) => {
+    deleteVideoMutation.mutate(id);
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete("/api/video/" + id);
-      setUploadedVideos(uploadedVideos.filter((video) => video.id !== id));
-    } catch (err) {
-      console.error("Error deleting video:", err);
-      alert("An error occurred while deleting the video.");
-    }
+  const handleEditClick = (video) => {
+    setFormData({
+      courseName: video.courseName,
+      videoTitle: video.videoTitle,
+      file: null,
+    });
+    setEditingVideo(video);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setFormData({ courseName: "", videoTitle: "", file: null });
+    setEditingVideo(null);
+    setCourseNameError(false);
+    setVideoTitleError(false);
   };
 
   return (
-    <div className="mn-wrapper">
+    <section className="mv-wrapper">
       <Navbar />
       <div className="ma-main">
         <Sidebar />
@@ -151,10 +230,10 @@ const MyVideos = () => {
             <span className="primaryText">My Videos</span>
             <button
               className="flexStart add-button"
-              onClick={() => setShowModal(true)}
+              onClick={() => setModalOpen(true)}
             >
               <img
-                src={greenAdd}
+                src="/green_add.png"
                 alt="Add Video"
                 title="Add Video"
                 className="add-icon"
@@ -163,10 +242,10 @@ const MyVideos = () => {
             </button>
           </div>
 
-          <Swiper {...sliderSettings}>
-            <SliderButtons />
-            {Array.isArray(uploadedVideos) && uploadedVideos.length > 0 ? (
-              uploadedVideos.map((video) => (
+          {videos && videos.length > 0 ? (
+            <Swiper {...sliderSettings}>
+              <SliderButtons />
+              {videos.map((video) => (
                 <SwiperSlide key={video.id}>
                   <div className="flexColStart mv-card">
                     <img
@@ -174,12 +253,18 @@ const MyVideos = () => {
                       alt="Video Icon"
                       className="mv-card-icon"
                     />
-                    <h3>{video.courseName}</h3>
-                    <p>{video.videoTitle}</p>
+                    <span className="purpleText">{video.videoTitle}</span>
+                    <span className="secondaryText">{video.courseName}</span>
+                    <span className="greenText2">
+                      {video.owner?.fullName || "Unknown"}
+                    </span>
+                    <span className="secondaryText ma-date">
+                      {dayjs(video.createdAt).format("DD/MM/YYYY HH:mm")}
+                    </span>
                     <div className="flexCenter mv-card-buttons">
                       <button
                         className="button2"
-                        onClick={() => handleEdit(video.id)}
+                        onClick={() => handleEditClick(video)}
                       >
                         Edit
                       </button>
@@ -204,73 +289,79 @@ const MyVideos = () => {
                     </div>
                   </div>
                 </SwiperSlide>
-              ))
-            ) : (
-              <SwiperSlide>
-                <div className="flexColStart mv-card">
-                  <p>No videos yet.</p>
-                </div>
-              </SwiperSlide>
-            )}
-          </Swiper>
+              ))}
+            </Swiper>
+          ) : (
+            <div className="flexCenter">
+              <span className="secondaryText">You have no videos yet.</span>
+            </div>
+          )}
         </main>
       </div>
 
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>{editingVideoId ? "Edit Video" : "Add New Video"}</h3>
-            <select
-              value={courseName}
-              onChange={handleCourseNameChange}
-              className="input-field dropdown-field"
-            >
-              <option value="" disabled>
-                Select a Course
-              </option>
-              {courseOptions.map((course, index) => (
-                <option key={index} value={course}>
-                  {course}
-                </option>
-              ))}
-            </select>
-            {courseNameError && (
-              <p className="mn-error-message">Course name is required.</p>
-            )}
-            <input
-              type="text"
-              placeholder="Enter Video Title"
-              value={videoTitle}
-              onChange={handleVideoTitleChange}
-              className="input-field"
-            />
-            {videoTitleError && (
-              <p className="mn-error-message">Video title is required.</p>
-            )}
-            <input
-              type="file"
-              accept="video/*"
-              onChange={handleFileChange}
-              className="input-field"
-            />
-            <div className="modal-buttons">
-              <button onClick={handleUpload} className="upload-button">
-                {editingVideoId ? "Save" : "Upload"}
+      {isModalOpen && (
+        <div className="modal-container">
+          <div className="ma-modal-overlay" onClick={closeModal}></div>
+          <div className="ma-add-modal">
+            <div className="modal-header">
+              <span>{editingVideo ? "Edit Video" : "Add Video"}</span>
+              <button onClick={closeModal}>X</button>
+            </div>
+            <div className="modal-body">
+              <label>Course Name</label>
+              <select
+                name="courseName"
+                onChange={handleInputChange}
+                value={formData.courseName}
+                className={courseNameError ? "input-error" : ""}
+              >
+                <option value="">Select a Course</option>
+                {courseOptions.map((course, index) => (
+                  <option key={index} value={course}>
+                    {course}
+                  </option>
+                ))}
+              </select>
+              {courseNameError && (
+                <p className="mn-error-message">Course name is required.</p>
+              )}
+              <label>Video Title</label>
+              <input
+                name="videoTitle"
+                onChange={handleInputChange}
+                value={formData.videoTitle}
+                placeholder="Enter video title"
+                className={videoTitleError ? "input-error" : ""}
+              />
+              {videoTitleError && (
+                <p className="mn-error-message">Video title is required.</p>
+              )}
+              <label>Video File</label>
+              <input
+                type="file"
+                accept="video/*"
+                onChange={handleFileChange}
+                className="input-field"
+              />
+            </div>
+            <div className="modal-footer">
+              <button className="cancel-button" onClick={closeModal}>
+                Cancel
               </button>
               <button
-                onClick={() => {
-                  setShowModal(false);
-                  setEditingVideoId(null);
-                }}
-                className="notes-cancel-button"
+                className="submit-button"
+                onClick={handleSubmit}
+                disabled={
+                  createVideoMutation.isLoading || updateVideoMutation.isLoading
+                }
               >
-                Cancel
+                {editingVideo ? "Save Changes" : "Submit"}
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 };
 
