@@ -179,6 +179,27 @@
     color: white;
   }
 
+  .favbutton {
+  border: none;
+  background: none;
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  z-index: 1;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+/* Kalp hover'da büyüsün */
+.favbutton:hover {
+  transform: scale(1.098);
+}
+
+/* Kalbin rengini değiştirme veya başka efektler */
+.favbutton:hover svg {
+  transition: transform 0.3s ease;
+  transform: scale(1.098);
+}
   
   /* media queries */
   @media (min-width: 1536px) {

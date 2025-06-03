@@ -218,7 +218,7 @@ const Favorites = () => {
                 <SwiperSlide key={`${card.type}-${card.id}`}>
                   <div className="flexColStart f-card">
                     <button
-                      className="flexCenter button2"
+                      className="flexCenter favbutton"
                       onClick={() => handleToggleFavorite(card.id, card.type)}
                     >
                       <AiFillHeart size={30} color="#c40a5d" />

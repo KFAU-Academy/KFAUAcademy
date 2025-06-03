@@ -168,7 +168,7 @@ const Videos = () => {
               filteredVideos.map((card, i) => (
                 <div key={card.id} className="flexColStart v-card">
                   <button
-                    className="flexCenter button2"
+                    className="flexCenter favbutton"
                     onClick={() => handleToggleFavorite(card.id)}
                   >
                     <AiFillHeart

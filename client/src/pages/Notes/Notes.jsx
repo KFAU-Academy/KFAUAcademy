@@ -169,7 +169,7 @@ const Notes = () => {
               filteredNotes.map((card, i) => (
                 <div key={card.id} className="flexColStart n-card">
                   <button
-                    className="flexCenter button2"
+                    className="flexCenter favbutton"
                     onClick={() => handleToggleFavorite(card.id)}
                   >
                     <AiFillHeart
