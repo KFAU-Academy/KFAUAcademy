@@ -121,91 +121,87 @@ const Notes = () => {
     <section className="n-wrapper">
       <Navbar />
       <div className="paddings flexCenter n-container">
-        <div className="paddings flexCenter n-responsive">
-          <div className="selection-bar">
-            <input
-              type="text"
-              value={selectedCourse}
-              placeholder="Search for courses..."
-              onChange={handleInputChange}
-              className="course-input"
-            />
-            <button className="dropdown-button" onClick={toggleDropdown}>
-              <FaChevronDown color="#d06382" />
-            </button>
+        <div className="selection-bar">
+          <input
+            type="text"
+            value={selectedCourse}
+            placeholder="Search for courses..."
+            onChange={handleInputChange}
+            className="course-input"
+          />
+          <button className="dropdown-button" onClick={toggleDropdown}>
+            <FaChevronDown color="#d06382" />
+          </button>
 
-            {dropdownOpen && (
-              <ul className="dropdown-menu">
-                <li className="dropdown-item" onClick={() => selectCourse("")}>
-                  All Courses
+          {dropdownOpen && (
+            <ul className="dropdown-menu">
+              <li className="dropdown-item" onClick={() => selectCourse("")}>
+                All Courses
+              </li>
+              {courseOptions.map((course, index) => (
+                <li
+                  key={index}
+                  className="dropdown-item"
+                  onClick={() => selectCourse(course)}
+                >
+                  {course}
                 </li>
-                {courseOptions.map((course, index) => (
-                  <li
-                    key={index}
-                    className="dropdown-item"
-                    onClick={() => selectCourse(course)}
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="search-bar">
+          <FaSearch color="#d06382" size={20} />
+          <input
+            type="text"
+            value={searchQuery}
+            placeholder="Search by note title..."
+            onChange={handleSearchChange}
+            className="search-input"
+          />
+        </div>
+
+        <main className="ns-container">
+          <div className="paddings flexCenter notes">
+            {filteredNotes && filteredNotes.length > 0 ? (
+              filteredNotes.map((card, i) => (
+                <div key={card.id} className="flexColStart n-card">
+                  <button
+                    className="flexCenter favbutton"
+                    onClick={() => handleToggleFavorite(card.id)}
                   >
-                    {course}
-                  </li>
-                ))}
-              </ul>
+                    <AiFillHeart
+                      size={30}
+                      color={favNotes.includes(card.id) ? "#c40a5d" : "#fff2f9"}
+                    />
+                  </button>
+                  <img
+                    src={card.image || "/note_icon.png"}
+                    alt="note"
+                    onError={(e) => (e.target.src = "/note_icon.png")}
+                  />
+                  <span className="purpleText">
+                    {truncate(card.noteTitle, { length: 30 })}
+                  </span>
+                  <span className="greenText">
+                    {card.userEmail.split("@")[0]}
+                  </span>
+                  <button
+                    className="flexCenter button2"
+                    onClick={() =>
+                      window.open(getNoteUrl(card.noteUrl), "_blank")
+                    }
+                  >
+                    <FaFilePdf size={30} />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p>No notes found.</p>
             )}
           </div>
-
-          <div className="search-bar">
-            <FaSearch color="#d06382" size={20} />
-            <input
-              type="text"
-              value={searchQuery}
-              placeholder="Search by note title..."
-              onChange={handleSearchChange}
-              className="search-input"
-            />
-          </div>
-
-          <main className="ns-container">
-            <div className="paddings flexCenter notes">
-              {filteredNotes && filteredNotes.length > 0 ? (
-                filteredNotes.map((card, i) => (
-                  <div key={card.id} className="flexColStart n-card">
-                    <button
-                      className="flexCenter favbutton"
-                      onClick={() => handleToggleFavorite(card.id)}
-                    >
-                      <AiFillHeart
-                        size={30}
-                        color={
-                          favNotes.includes(card.id) ? "#c40a5d" : "#fff2f9"
-                        }
-                      />
-                    </button>
-                    <img
-                      src={card.image || "/note_icon.png"}
-                      alt="note"
-                      onError={(e) => (e.target.src = "/note_icon.png")}
-                    />
-                    <span className="purpleText">
-                      {truncate(card.noteTitle, { length: 30 })}
-                    </span>
-                    <span className="greenText">
-                      {card.userEmail.split("@")[0]}
-                    </span>
-                    <button
-                      className="flexCenter button2"
-                      onClick={() =>
-                        window.open(getNoteUrl(card.noteUrl), "_blank")
-                      }
-                    >
-                      <FaFilePdf size={30} />
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <p>No notes found.</p>
-              )}
-            </div>
-          </main>
-        </div>
+        </main>
       </div>
     </section>
   );

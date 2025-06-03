@@ -1,5 +1,5 @@
 .nav-wrapper{
-    z-index: 1001;
+    z-index: 99;
     background: var(--cactus-gradient);
     background: rgba(255, 255, 255, 0.2); 
     backdrop-filter: blur(10px);
@@ -11,7 +11,7 @@
 }
 
 .nav-container{
-    z-index: 1001;
+    z-index: 99;
     position: relative;
     max-width: 90%;
     justify-content: space-between;

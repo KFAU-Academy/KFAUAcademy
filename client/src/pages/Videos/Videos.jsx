@@ -114,97 +114,95 @@ const Videos = () => {
     <section className="v-wrapper">
       <Navbar />
       <div className="paddings flexCenter v-container">
-        <div className="paddings flexCenter v-responsive">
-          <div className="selection-bar">
-            <input
-              type="text"
-              value={searchInput}
-              placeholder="Search for courses..."
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="course-input"
-            />
-            <button
-              className="v-dropdown-button"
-              onClick={() => setShowDropdown((prev) => !prev)}
-            >
-              <FaChevronDown color="#d06382" />
-            </button>
+        <div className="selection-bar">
+          <input
+            type="text"
+            value={searchInput}
+            placeholder="Search for courses..."
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="course-input"
+          />
+          <button
+            className="v-dropdown-button"
+            onClick={() => setShowDropdown((prev) => !prev)}
+          >
+            <FaChevronDown color="#d06382" />
+          </button>
 
-            {showDropdown && (
-              <ul className="v-dropdown-menu">
+          {showDropdown && (
+            <ul className="v-dropdown-menu">
+              <li
+                className="v-dropdown-item"
+                onClick={() => handleCourseSelect("")}
+              >
+                All Courses
+              </li>
+              {courseOptions.map((course, index) => (
                 <li
+                  key={index}
                   className="v-dropdown-item"
-                  onClick={() => handleCourseSelect("")}
+                  onClick={() => handleCourseSelect(course)}
                 >
-                  All Courses
+                  {course}
                 </li>
-                {courseOptions.map((course, index) => (
-                  <li
-                    key={index}
-                    className="v-dropdown-item"
-                    onClick={() => handleCourseSelect(course)}
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="search-bar">
+          <FaSearch color="#d06382" size={20} />
+          <input
+            type="text"
+            value={searchQuery}
+            placeholder="Search by video title..."
+            onChange={handleSearchChange}
+            className="search-input"
+          />
+        </div>
+
+        <main className="vs-container">
+          <div className="paddings flexCenter videos">
+            {filteredVideos && filteredVideos.length > 0 ? (
+              filteredVideos.map((card, i) => (
+                <div key={card.id} className="flexColStart v-card">
+                  <button
+                    className="flexCenter favbutton"
+                    onClick={() => handleToggleFavorite(card.id)}
                   >
-                    {course}
-                  </li>
-                ))}
-              </ul>
+                    <AiFillHeart
+                      size={30}
+                      color={
+                        favVideos.includes(card.id) ? "#c40a5d" : "#fff2f9"
+                      }
+                    />
+                  </button>
+                  <img
+                    src={card.image || "/video_icon.png"}
+                    alt="video"
+                    onError={(e) => (e.target.src = "/video_icon.png")}
+                  />
+                  <span className="purpleText">
+                    {truncate(card.videoTitle, { length: 30 })}
+                  </span>
+                  <span className="greenText">
+                    {card.userEmail.split("@")[0]}
+                  </span>
+                  <button
+                    className="flexCenter button2"
+                    onClick={() =>
+                      window.open(getVideoUrl(card.videoUrl), "_blank")
+                    }
+                  >
+                    <GiPlayButton size={30} />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p>No videos found.</p>
             )}
           </div>
-
-          <div className="search-bar">
-            <FaSearch color="#d06382" size={20} />
-            <input
-              type="text"
-              value={searchQuery}
-              placeholder="Search by video title..."
-              onChange={handleSearchChange}
-              className="search-input"
-            />
-          </div>
-
-          <main className="vs-container">
-            <div className="paddings flexCenter videos">
-              {filteredVideos && filteredVideos.length > 0 ? (
-                filteredVideos.map((card, i) => (
-                  <div key={card.id} className="flexColStart v-card">
-                    <button
-                      className="flexCenter favbutton"
-                      onClick={() => handleToggleFavorite(card.id)}
-                    >
-                      <AiFillHeart
-                        size={30}
-                        color={
-                          favVideos.includes(card.id) ? "#c40a5d" : "#fff2f9"
-                        }
-                      />
-                    </button>
-                    <img
-                      src={card.image || "/video_icon.png"}
-                      alt="video"
-                      onError={(e) => (e.target.src = "/video_icon.png")}
-                    />
-                    <span className="purpleText">
-                      {truncate(card.videoTitle, { length: 30 })}
-                    </span>
-                    <span className="greenText">
-                      {card.userEmail.split("@")[0]}
-                    </span>
-                    <button
-                      className="flexCenter button2"
-                      onClick={() =>
-                        window.open(getVideoUrl(card.videoUrl), "_blank")
-                      }
-                    >
-                      <GiPlayButton size={30} />
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <p>No videos found.</p>
-              )}
-            </div>
-          </main>
-        </div>
+        </main>
       </div>
     </section>
   );
