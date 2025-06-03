@@ -5,8 +5,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "start": "nodemon index.js",
-    "postinstall": "prisma generate"
+    "start": "nodemon index.js"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",
